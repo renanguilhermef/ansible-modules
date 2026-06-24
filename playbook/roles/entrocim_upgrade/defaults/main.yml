@@ -1,0 +1,5 @@
+---
+entrocim_update: /app/hepta/update/
+entrocim_scripts: /app/hepta/scripts/
+entrocim_upgrade_binaries: "{{ role_path }}/files/EntrocimUpg.tar"
+entrocim_upgrade_script: "{{ role_path }}/files/Entrocim_AI_UpgAuto.sh"

@@ -1,0 +1,88 @@
+---
+  - name: getting hostname from the host
+    shell: echo $HOSTNAME
+    register: hostname
+    changed_when: hostname.rc != 0
+
+  - name: return datetime 
+    shell: echo $(date '+%Y-%m-%dT%H:%M:%S')
+    register: datetime
+    changed_when: datetime.rc != 0
+
+  - name: Checking if host belongs to the project. If not, will skip next tasks
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    stat:
+      path: "/app/hepta/{{ hostname.stdout }}/var/proj/{{ project }}/"
+    register: out_project_host
+
+  - name: Validate if host belongs to the project. If not , will not proceed with below tasks
+    block:
+      - name: Remove project folder on the host
+        become: true
+        become_user: entrocim
+        become_method: su
+        become_exe: 'sudo su'
+        file:
+          path: "{{ out_project_host.stat.path }}"
+          state: "absent"
+          mode: "0731"
+
+      - name: restart entrocim application for the remote hosts
+        command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+        register: restart
+        changed_when: restart.rc != 0
+
+      - name: Checking entrocim url status
+        uri:
+          url: "https://{{ inventory_hostname }}/user/login"
+        register: url
+        until: url.status == 200
+        retries: 60
+        delay: 1
+
+    when: out_project_host.stat.exists
+
+  - name: restart entrocim application on the active host 
+    command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+    register: restart
+    changed_when: restart.rc != 0
+    delegate_to: "{{ switch_to_server | lower | trim }}"
+    run_once: true
+
+  - name: Checking entrocim url status on the active host
+    uri:
+      url: "https://{{ switch_to_server | lower | trim }}/user/login"
+    register: url
+    until: url.status == 200
+    retries: 60
+    delay: 1
+    run_once: true
+
+  - name: Sleep for 5 seconds before to enable replica
+    ansible.builtin.wait_for:
+      timeout: 5
+    delegate_to: localhost
+    run_once: true 
+
+  - name: Creating remote replica
+    entrocim_replica_config:
+        hostname: "{{ inventory_hostname }}"
+        config: "create"
+        id: "{{ project }}"
+    delegate_to: localhost
+    register: out_create_remote_replica
+    when: out_project_host.stat.exists
+    failed_when: "'failed' in out_create_remote_replica.stdout"
+
+  - name: Configure and initialize replica sync
+    entrocim_replica_config:
+        hostname: "{{ inventory_hostname }}"
+        config: "sync"
+        id: "{{ project }}"
+    delegate_to: localhost
+    register: out_sync_replica
+    when: out_project_host.stat.exists
+    failed_when: "'failed' in out_sync_replica.stdout"

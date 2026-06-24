@@ -1,0 +1,49 @@
+---
+  - name: Getting hostname information from server
+    shell: echo $HOSTNAME
+    register: hostname
+    changed_when: hostname.rc != 0
+  
+  - name: getting entrocim local home 
+    entrocim_host_info:
+      entrocim_hostname: "{{ inventory_hostname }}"
+    delegate_to: localhost 
+    register: out_entrocim_host 
+
+  - name: Getting pod location
+    set_fact:
+      entrocim_non_core_pod_loc: "/app/hepta/{{ hostname.stdout }}/var/lib/fan/"
+      entrocim_core_pod_loc: "{{ item.value }}/lib/fan/"
+    when: item.key == "env.homeDir"
+    with_dict: "{{ out_entrocim_host.dict }}"
+
+  - name: copy non core pod files
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    copy:
+      src: "{{ source_non_core_loc }}"
+      dest: "{{ entrocim_non_core_pod_loc }}"
+
+  - name: copy core pod files
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    copy:
+      src: "{{ source_core_loc }}"
+      dest: "{{ entrocim_core_pod_loc }}"
+
+  - name: Restarting entrocim application
+    command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+    register: restart
+    changed_when: restart.rc != 0
+
+  - name: Checking entrocim url status
+    uri:
+      url: "https://{{ inventory_hostname }}/user/login"
+    register: url
+    until: url.status == 200
+    retries: 60
+    delay: 1

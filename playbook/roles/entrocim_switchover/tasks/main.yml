@@ -1,0 +1,33 @@
+---
+- name: Checking if project or projects has been defined before to execute switch
+  fail:
+    msg: "Project or projects weren't defined. Please inform which project must be activated"
+  when: projects is not defined
+
+- name: getting hostname
+  shell: echo $HOSTNAME
+  register: hostname
+  changed_when: hostname.rc != 0
+
+- name: converting projects in a list variable and setting entrocim home path
+  set_fact:
+    projects_list: "{{ projects.split(',') }}"
+    project_home_path: "/app/hepta/{{ hostname.stdout }}/var/proj/"
+    entrocim_cluster_path: "/app/hepta/{{ hostname.stdout }}/var/cluster/"
+
+- name: validating project replicas
+  include_tasks: "run-validate-replica.yml"
+  loop: "{{ projects_list }}"
+  loop_control:
+    loop_var: project
+
+- name: Executing switchover
+  include_tasks: "run-switchover.yml"
+  loop: "{{ projects_list }}"
+  loop_control:
+    loop_var: project
+        
+- name: restart entrocim application
+  command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+  register: restart
+  changed_when: restart.rc != 0

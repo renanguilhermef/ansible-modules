@@ -1,0 +1,7 @@
+hostname:
+entrocim_scripts_loc: /app/hepta/scripts/
+nginx_host_conf_loc: /etc/nginx/sites-available/
+nginx_conf_loc: /etc/nginx/
+ssl_certificate: /etc/ssl/certs/
+ssl_certificate_key: /etc/ssl/private/
+copy_template_script: "{{ entrocim_scripts_loc }}copy_conf_files.sh.sh"

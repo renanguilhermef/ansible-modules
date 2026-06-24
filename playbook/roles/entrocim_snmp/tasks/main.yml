@@ -1,0 +1,28 @@
+---
+  - name: getting hostname
+    shell: echo $HOSTNAME
+    register: hostname
+    changed_when: hostname.rc != 0
+
+  - name: send powernet file to entrocim 
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    copy:
+      src: "{{ powernet }}"
+      dest: "/app/hepta/{{ hostname.stdout }}/var/proj/{{ project_name }}/data/mibs/default/"
+
+  - name: send rfc file to entrocim 
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    copy:
+      src: "{{ rfc }}"
+      dest: "/app/hepta/{{ hostname.stdout }}/var/proj/{{ project_name }}/data/mibs/default/ietf/"
+
+  - name: restart entrocim application
+    command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+    register: restart
+    changed_when: restart.rc != 0

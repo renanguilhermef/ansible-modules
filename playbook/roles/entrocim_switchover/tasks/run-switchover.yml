@@ -1,0 +1,122 @@
+---
+  - name: setting backup location on the var
+    set_fact:
+      bkp_loc: "/app/hepta/backup/db/{{ project }}"
+
+  - name: Getting DB backup compressed path files
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    find:
+      paths: "{{ bkp_loc }}"
+      use_regex: yes
+      patterns: '{{ project }}-{{ regex }}'
+    register: out_files
+    vars: 
+      regex: '\d{6}-\d{6}\.zip'
+
+  - name: getting last  backup file from db backup folder
+    set_fact:
+      last_backup_file: "{{ out_files.files | sort(attribute='mtime',reverse=true) | first }}"
+
+  - name: unarchive last db backup file
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    unarchive:
+      src: "{{ last_backup_file.path }}"
+      dest: "{{ project_home_path }}/{{ project }}/"
+      remote_src: yes
+
+  - name: setting db backup location after unarchived to the ansible variable
+    set_fact:
+      unarchived_bkp_loc: "{{ project_home_path }}/{{ project }}/{{ last_backup_file.path | basename | splitext | first }}"
+  
+  - name: copyng bin folder from unarchived db backup file
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    copy:
+      src: "{{ unarchived_bkp_loc }}/db/bin"
+      dest: "{{ project_home_path }}/{{ project }}/db/"
+      remote_src: yes
+      mode: '0710'
+    ignore_errors: true 
+
+  - name: copyng password.props file from unarchived backup file for Limerick
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    copy:
+      src: "{{ unarchived_bkp_loc }}/db/passwords.props"
+      dest: "{{ project_home_path }}/{{ project }}/db/"
+      remote_src: yes
+      mode: '0710'
+    when: (project == "dellEMSEmeaLim" )
+
+  - name: remove unarchived db backup folder
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    file:
+      path: "{{ unarchived_bkp_loc }}"
+      state: absent
+
+  - name: Getting data itw / IO backup compressed path files 
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    find:
+      paths: "{{ bkp_loc }}"
+      use_regex: yes
+      patterns: '{{ project }}_itwIOData_{{ regex }}'
+    register: out_data_files
+    vars: 
+      regex: '\d{6}-\d{6}\.zip'
+
+  - name: getting last backup file from data itw / IO backup folder 
+    set_fact:
+      last_data_bkp_file: "{{ out_data_files.files | sort(attribute='mtime',reverse=true) | first }}"
+
+  - name: unarchiving folders to the project location
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    unarchive:
+      src: "{{ last_data_bkp_file.path }}"
+      dest: "{{ project_home_path }}/{{ project }}/"
+      remote_src: yes
+ 
+  - name: remove replica.trio file from project folder
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    file:
+      path: "{{ project_home_path }}{{ project }}/replica.trio"
+      state: absent
+
+  - name: restart entrocim application
+    command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+    register: restart
+    changed_when: restart.rc != 0
+    
+  - name: Getting cluster hosts that are going to become project remote
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    shell: |
+           set -o pipefail
+           cat {{ entrocim_cluster_path }}folio.trio | grep dis | grep {{ region }}.dell.com | awk -F: '{print $2}' | tr -d '"'
+    register: out_cluster_hosts
+    changed_when: out_cluster_hosts.rc != 0
+    args:
+      executable: /usr/bin/bash

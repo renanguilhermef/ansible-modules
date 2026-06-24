@@ -1,0 +1,3 @@
+powernet: "{{ role_path }}/files/powernet441.mib"
+rfc: "{{ role_path }}/files/RFC-1215"
+project_name: "dellEMSEmeaLim"

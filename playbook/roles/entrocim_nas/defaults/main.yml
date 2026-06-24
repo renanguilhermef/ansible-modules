@@ -1,0 +1,4 @@
+NAS:
+  - { share: "APACPRDETHREP02.onefs.dell.com:/EMH_1002438mspMP", region: "apac"}
+  - { share: "EMEAPRDETHREP01.onefs.dell.com:/EMS_1002438bkpprdMP", region: "emea"}
+  - { share: "AMERPRDEMSREP01.onefs.dell.com:/ems_2552backupsnf", region: "amer"}

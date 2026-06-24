@@ -1,0 +1,11 @@
+---
+- name: converting projects in a list variable and setting entrocim home path
+  set_fact:
+    projects_list: "{{ projects.split(',') }}"
+    
+- name: Executing remote
+  include_tasks: "run-remote.yml"
+  loop: "{{ projects_list }}"
+  loop_control:
+        loop_var: project
+        

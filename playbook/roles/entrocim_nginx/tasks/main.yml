@@ -1,0 +1,46 @@
+---
+  - name: getting hostname from the host
+    shell: echo $HOSTNAME
+    register: out_hostname
+    changed_when: out_hostname.rc != 0
+
+  - name: setting hostname to ansible variable
+    set_fact:
+      hostname: "{{ out_hostname.stdout }}"
+      entrocim_ssl: "/app/hepta/ssl/"
+
+  - name: copy nginx config templates to the entrocim instance
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      mode: "0731"
+    with_items:
+      - {src: "{{ role_path }}/templates/server.conf.j2", dest: "{{ entrocim_scripts_loc }}{{ hostname }}.conf" }
+      - {src: "{{ role_path }}/templates/nginx.conf.j2", dest: "{{ entrocim_scripts_loc }}nginx.conf" }
+      - {src: "{{ role_path }}/templates/copy_conf_files.sh.j2", dest: "{{ copy_template_script }}" }
+
+  - name: execute copy script with sudo to replace on the nginx folder configuration files
+    command: "sudo bash {{ copy_template_script }}"
+    register: out_copy
+    changed_when: out_copy.rc != 0
+
+  - name: restart nginx
+    command: "sudo bash /app/hepta/scripts/service_nginx_restart.sh"
+    register: restart
+    changed_when: restart.rc != 0
+
+  - name: Checking entrocim url status
+    uri:
+      url: "https://{{ hostname }}/user/login"
+    register: url
+    until: url.status == 200
+    retries: 60
+    delay: 1
+
+  - name: Checking healthcheck url status
+    uri:
+      url: "https://{{ hostname }}/healthcheck/"
+    register: url
+    until: url.status == 200
+    retries: 60
+    delay: 1

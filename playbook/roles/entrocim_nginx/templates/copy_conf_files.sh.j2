@@ -1,0 +1,4 @@
+cp {{ entrocim_scripts_loc }}{{ hostname }}.conf {{ nginx_host_conf_loc }}
+cp {{ entrocim_scripts_loc }}nginx.conf {{ nginx_conf_loc }} 
+cp {{ entrocim_ssl }}{{ hostname }}.pem {{ ssl_certificate }} 
+cp {{ entrocim_ssl }}{{ hostname }}.key {{ ssl_certificate_key }} 

@@ -1,0 +1,3 @@
+---
+source_core_loc: "{{ role_path }}/files/core/"
+source_non_core_loc: "{{ role_path }}/files/non-core/"

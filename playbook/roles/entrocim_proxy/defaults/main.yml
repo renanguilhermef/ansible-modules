@@ -1,0 +1,2 @@
+proxy_cfg: proxy=https://proxy:80/
+proxy_line: // proxy=http://foo:8080/

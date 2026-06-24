@@ -1,0 +1,21 @@
+- name: Execute shell script as root to add or replace NAS according with region
+  shell: | 
+          set -o pipefail
+          nas=$(cat /etc/fstab | grep /app/hepta/backup | awk '{print $1;}')
+          echo "#!/bin/bash
+          if [ ! -z '$nas' ] && [ '$nas' != '{{ item['share'] }}' ] ; then
+            #grep -v '$nas' /etc/fstab > tmpfstab
+            #mv tmpfstab /etc/fstab
+            sed -i '\@^$nas@d' /etc/fstab 
+            echo '{{ item['share'] }} /app/hepta/backup nfs vers=3,rw,nolock 0 0' >> /etc/fstab
+          elif [ -z '$nas' ]; then
+            echo '{{ item['share'] }} /app/hepta/backup nfs vers=3,rw,nolock 0 0' >> /etc/fstab
+          fi
+          systemctl daemon-reload
+          umount /app/hepta/backup
+          mount /app/hepta/backup" > /app/hepta/scripts/mount-nas.sh
+          sudo bash /app/hepta/scripts/mount-nas.sh
+  when: item['region'] == region 
+  with_items: "{{ NAS }}"
+  register: setup_nas
+  changed_when: setup_nas.rc != 0

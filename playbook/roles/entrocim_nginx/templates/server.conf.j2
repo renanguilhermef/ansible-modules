@@ -1,0 +1,36 @@
+server {
+    listen              443 ssl http2;
+    server_name         {{ hostname }};
+
+    # SSL
+    ssl_certificate     /etc/ssl/certs/{{ hostname }}.pem;
+    ssl_certificate_key /etc/ssl/private/{{ hostname }}.key;
+
+    # security
+    include            entrocim/security.conf;
+
+    # logging
+    access_log          /var/log/nginx/{{ hostname }}.access.log;
+    error_log           /var/log/nginx/{{ hostname }}.error.log warn;
+
+    # reverse proxy
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        include    entrocim/proxy.conf;
+    }
+
+    #SkySpark Cluster traffic
+    location /cluster/ {
+      proxy_pass http://127.0.0.1:8080;
+      include    entrocim/proxy.conf;
+    }
+
+location /healthcheck/ {
+ proxy_pass http://127.0.0.1:3000/healthcheck/;
+}
+location /healthcheck {
+ proxy_pass http://127.0.0.1:3000/healthcheck/;
+}
+    # additional config
+    include entrocim/general.conf;
+}

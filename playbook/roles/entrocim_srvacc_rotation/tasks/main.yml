@@ -1,0 +1,29 @@
+---
+  - name: Include myvault variables
+    include_vars:
+      file: myvault.yml
+    no_log: true 
+    run_once: true
+
+  - name: getting password from myvault
+    myvault_get_password:
+        vault_hid: "{{ vault_hid }}"
+        vault_authn: "{{ vault_authn }}"
+        vault_secret: "{{ vault_secret }}"
+    register: out_password
+    delegate_to: localhost
+    no_log: true
+    run_once: true 
+
+  - name: updating password 
+    entrocim_ldap_config:
+        entrocim_ldap_password: "{{ out_password.stdout }}"
+        entrocim_hostname: "{{ inventory_hostname }}"
+        entrocim_ldap_state: "updatePassword"
+    delegate_to: localhost
+    register: out_update_password
+    no_log: true
+
+  - name: show message to the user 
+    debug:
+      msg: "{{ out_update_password.stdout }}"

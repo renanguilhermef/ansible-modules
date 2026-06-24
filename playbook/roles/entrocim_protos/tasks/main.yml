@@ -1,0 +1,17 @@
+---
+- name: add proto on entrocim 
+  entrocim_protos:
+      entrocim_hostname: "{{ inventory_hostname }}"
+      entrocim_proto_dis: "{{ entrocim_proto_dis }}"
+      entrocim_proto_name: "{{ entrocim_proto_name }}"
+      entrocim_proto_role: "{{ entrocim_proto_role }}"
+      entrocim_proto_ldap: "{{ entrocim_proto_ldap }}"
+      entrocim_proto_project: "{{ entrocim_proto_project }}"
+      entrocim_proto_state: "add"
+  delegate_to: localhost 
+
+- name: update protos on the ldap configuration 
+  entrocim_ldap_config:
+    entrocim_hostname: "{{ inventory_hostname }}"
+    entrocim_ldap_state: "updateProto"
+  delegate_to: localhost

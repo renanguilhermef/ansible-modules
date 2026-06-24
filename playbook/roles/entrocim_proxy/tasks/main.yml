@@ -1,0 +1,32 @@
+---
+  - name: Getting hostname information from server
+    shell: echo $HOSTNAME
+    register: hostname
+    changed_when: hostname.rc != 0
+
+  - name: getting entrocim local home 
+    entrocim_host_info:
+      entrocim_hostname: "{{ inventory_hostname }}"
+    delegate_to: localhost 
+    register: out_entrocim_host 
+
+  - name: Setting file configuration location
+    set_fact:
+      entrocim_web_file_loc: "{{ item.value }}/etc/web/config.props"
+    when: item.key == 'env.homeDir'
+    with_dict: "{{ out_entrocim_host.dict }}"
+
+  - name: Modifying config.props inserting proxy configuration
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    lineinfile:
+      path: "{{ entrocim_web_file_loc }}"
+      insertafter: "{{ proxy_line }}"
+      line: "{{ proxy_cfg }}"
+
+  - name: Restarting entrocim application
+    command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+    register: restart
+    changed_when: restart.rc != 0

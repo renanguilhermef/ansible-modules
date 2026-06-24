@@ -1,0 +1,46 @@
+---
+  - name: Testing if projects folder exists
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    stat:
+      path: "{{ project_home_path }}{{ project }}"
+    register: project_status
+
+  - name: validate if projects exists on the entrocim
+    fail:
+      msg: "Project {{ project }} doesn't exist on the EntroCIM home path {{ project_home_path }}"
+    when: not project_status.stat.exists
+
+  - name: Testing if it is a replica project
+    become: true
+    become_user: entrocim
+    become_method: su
+    become_exe: 'sudo su'
+    stat:
+      path: "{{ project_home_path }}{{ project }}/replica.trio"
+    register: replica_status
+
+  - name: validate if it is a replica project
+    fail:
+      msg: "Project {{ project }} is not a replica"
+    when: not replica_status.stat.exists
+
+  - name: Getting replication synchronize status. In case of not 100% it is going to fail 
+    block:    
+    - name: getting replication information. Retries till sync is 100%
+      entrocim_replica_config:
+          hostname: "{{ inventory_hostname }}"
+          config: "get"
+          id: "{{ project }}"
+      delegate_to: localhost
+      register: out_get_replica
+      until: out_get_replica.dict['percent'] == "100.0 %"
+      retries: 60
+      delay: 1
+    rescue:
+    - name: message failure to check replication 
+      fail:
+        msg: "Current replication is not 100% synchronized and cannot execute switchover"
+      

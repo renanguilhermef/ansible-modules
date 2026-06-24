@@ -1,0 +1,5 @@
+---
+primary_host:
+projects_list:
+entrocim_commander_source: "{{ role_path }}/files/entrocim_commander"
+entrocim_commander_dest: /app/hepta/scripts/
