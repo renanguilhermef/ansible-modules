@@ -1,0 +1,9 @@
+- name: EntroCIM LDAP proto configuration
+  hosts: entrocim_all_np,entrocim_all_p,entrocim_all_preprod
+  gather_facts: no 
+  tasks:
+    - name: update protos on the ldap configuration 
+      entrocim_ldap_config:
+        entrocim_hostname: "{{ inventory_hostname }}"
+        entrocim_ldap_state: "updateProto"
+      delegate_to: localhost

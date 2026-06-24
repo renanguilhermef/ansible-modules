@@ -1,0 +1,5 @@
+- name: EntroCIM protos user playbook
+  hosts: entrocim_all_p,entrocim_all_np,entrocim_all_preprod
+  gather_facts: no 
+  roles:
+    - entrocim_protos 

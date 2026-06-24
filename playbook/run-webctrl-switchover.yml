@@ -1,0 +1,6 @@
+---
+  - name: webCTRL switchover
+    hosts: webctrl
+    gather_facts: no
+    roles:
+        - webctrl_switchover

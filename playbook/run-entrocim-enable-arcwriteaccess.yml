@@ -1,0 +1,9 @@
+- name: EntroCIM LDAP enable arcwriteaccess on the protos
+  hosts: entrocim_all_np,entrocim_all_p,entrocim_all_preprod
+  gather_facts: no 
+  tasks:
+    - name: enable arcwriteaccess on the operator protos
+      entrocim_protos:
+        entrocim_hostname: "{{ inventory_hostname }}"
+        entrocim_proto_state: "updateArcWriteAccess"
+      delegate_to: localhost

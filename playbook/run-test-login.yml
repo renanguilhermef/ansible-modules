@@ -1,0 +1,26 @@
+- name: Test webpage login
+  gather_facts: no
+  hosts: localhost 
+
+  tasks:
+  # - name: test login
+  #   uri:
+  #     url: https://webctrl-pc1.amer.dell.com/
+  #     url_username : ssadmin
+  #     url_password : "*^fPd@dsadasdas~^"
+  #   register: login
+
+  - name: Login to a form based webpage, then use the returned cookie to access the app in later tasks
+    ansible.builtin.uri:
+      url: https://webctrl-pc1.amer.dell.com/
+      method: POST
+      body_format: form-urlencoded
+      body:
+        name: ssadmin
+        password: "*^fPd@45Kwe7234~^"
+        enter: Sign in
+      status_code: 302
+    register: login
+
+  - debug: 
+      msg: "{{ login }}"

@@ -1,0 +1,6 @@
+- name: Entrocim Backup tasks playbook
+  hosts: entrocim_all_p
+  gather_facts: no
+  pre_tasks: 
+  roles:
+    - entrocim_backup

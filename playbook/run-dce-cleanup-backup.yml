@@ -1,0 +1,57 @@
+- name: DCE Cleanup old backup jobs
+  gather_facts: no
+  hosts: sauter #using a server in ireland to mount emea NAS
+  vars:
+    age: 7 
+    NAS: \\EMEAPRDETHREP01.onefs.dell.com\EMS_1002438bkpprdMP
+    temporary_mapped_driver: X
+    dce_bkp_folders:
+        - HAC
+        - OCS 
+  tasks:
+  - name: Rescue in case of error
+    block:
+    - name: Create a temporary mapped drive that requires authentication. 
+      win_mapped_drive:
+        letter: "{{ temporary_mapped_driver }}"
+        path: "{{ NAS }}"
+        username: '{{ ansible_user }}'
+        password: '{{ ansible_password }}'
+        state: present
+      become_method: runas
+      become: yes
+      become_user: SYSTEM
+
+    - name: delete backup files older than 14 days 
+      win_shell: |
+                Get-ChildItem -Path "X:\DCE_BKP\{{ item }}" -Directory | where {$_.LastWriteTime -le $(get-date).Adddays(-{{ age }})} | Remove-Item -recurse -force
+      become_method: runas
+      become: yes
+      become_user: SYSTEM
+      with_items: "{{ dce_bkp_folders }}"
+
+    - name: remove mapped drive after completing delete tasks
+      win_mapped_drive:
+        letter: "{{ temporary_mapped_driver }}"
+        path: "{{ NAS }}"
+        username: '{{ ansible_user }}'
+        password: '{{ ansible_password }}'
+        state: absent
+      become_method: runas
+      become: yes
+      become_user: SYSTEM
+    rescue: 
+    - name: remove mapped drive after completing delete tasks
+      win_mapped_drive:
+        letter: "{{ temporary_mapped_driver }}"
+        path: "{{ NAS }}"
+        username: '{{ ansible_user }}'
+        password: '{{ ansible_password }}'
+        state: absent
+      become_method: runas
+      become: yes
+      become_user: SYSTEM    
+      
+    - name: display error 
+      fail: 
+        msg: "Failed to remove dce backups" 

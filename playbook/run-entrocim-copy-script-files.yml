@@ -1,0 +1,25 @@
+- name: Entrocim Send script files
+  hosts: entrocim_all_p,entrocim_all_np,entrocim_all_preprod
+  gather_facts: no 
+  vars:
+    entrocim_source_scripts:
+      - "roles/entrocim_install/files/service_entrocim_stop.sh"
+      - "roles/entrocim_install/files/service_entrocim_start.sh"
+      - "roles/entrocim_install/files/service_entrocim_restart.sh"
+      - "roles/entrocim_install/files/service_nginx_start.sh"
+      - "roles/entrocim_install/files/service_nginx_stop.sh"
+      - "roles/entrocim_install/files/service_nginx_restart.sh"
+      - "roles/entrocim_install/files/service_hc_start.sh"
+      - "roles/entrocim_install/files/service_hc_stop.sh"
+      - "roles/entrocim_install/files/service_hc_restart.sh"
+      - "roles/entrocim_install/files/mount-nas.sh"
+    
+    entrocim_target_scripts: "/app/hepta/scripts/"
+  tasks: 
+  - name: Sending scripts to the entrocim machines
+    copy:
+      src: "{{ item }}"
+      dest: "{{ entrocim_target_scripts }}"
+      mode: "0755"
+    with_items:
+      - "{{ entrocim_source_scripts }}" 

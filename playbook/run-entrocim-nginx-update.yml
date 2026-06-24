@@ -1,0 +1,20 @@
+- name: Update nginx
+  hosts: all
+  gather_facts: no
+  pre_tasks:
+    - name: Checking if limit has been defined with server name that should be new active
+      fail:
+        msg: "For this playbook, you must use -l or --limit to define server or group"
+      when: ansible_limit is not defined
+      run_once: true
+  tasks:
+    - name: update repo 
+      shell: |
+             echo "yum --repo=AppStream8.latest-patch module enable nginx:1.20 -y" >> /app/hepta/scripts/update-repo.sh 
+             sudo bash /app/hepta/scripts/update-repo.sh
+             rm -rf /app/hepta/scripts/update-repo.sh
+    - name: upgrade nginx 
+      shell: |
+             echo "yum update nginx -y" >> /app/hepta/scripts/upgrade-nginx.sh 
+             sudo bash /app/hepta/scripts/upgrade-nginx.sh
+             rm -rf /app/hepta/scripts/upgrade-nginx.sh

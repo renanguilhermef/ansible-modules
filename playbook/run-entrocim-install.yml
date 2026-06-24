@@ -1,0 +1,15 @@
+---
+  - name: Entrocim install Playbook
+    hosts: all
+    gather_facts: yes
+    roles:
+        - entrocim_install_checks
+        - entrocim_certificate
+        - entrocim_install
+        - entrocim_users
+        - entrocim_configuration
+        - entrocim_proxy
+        - entrocim_healthchecker
+        - entrocim_nginx
+        - prometheus
+        - entrocim_nas

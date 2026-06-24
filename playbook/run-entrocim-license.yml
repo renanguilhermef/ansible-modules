@@ -1,0 +1,6 @@
+---
+- name: Entrocim install license
+  hosts: entrocim_all_p,entrocim_all_preprod,entrocim_all_np
+  gather_facts: yes
+  roles:
+      - entrocim_license

@@ -1,0 +1,6 @@
+---
+  - name: Sitescan switchover
+    hosts: sitescan
+    gather_facts: no
+    roles:
+        - sitescan_switchover

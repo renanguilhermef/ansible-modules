@@ -1,0 +1,76 @@
+- name: Entrocim check backups
+  hosts: entrocim_pc1_p
+  gather_facts: no 
+  vars:
+    entrocim_backup_loc: "/app/hepta/backup/db/"
+    entrocim_backup_projs: 
+      - "dellEMSMalCyberJ1"
+      - "dellEMSMalPen1"
+      - "dellEMSChiCCC6"
+      - "dellEMSChiCCC24"
+      - "dellEMSEmeaLodz"
+      - "dellEMSAPJ1"
+      - "dellEMSGlobal"
+      - "dellEMSEmea"
+      - "dellEMSEmeaCork"
+      - "dellEMSMalPen2"
+      - "dellEMSEmeaLim"
+      - "dellEMSAmerRTP"
+      - "dellEMSAmerApex"
+      - "dellEMSAmerFranklin"
+      - "dellEMSAmerHortolandia"
+      - "dellEMSIndChennai"
+      - "dellEMSIndDell6"
+      - "dellEMSAmerPS3B"
+      - "dellEMSAMER"
+
+    regex: '\d{6}-\d{6}\.zip'
+  tasks: 
+    - name: Checking new backups exists for the folio database
+      become: true
+      become_user: entrocim
+      become_method: su
+      become_exe: 'sudo su'      
+      find:
+        paths: "{{ entrocim_backup_loc }}{{ item }}"
+        age: -1d
+        use_regex: yes
+        patterns: "{{ item }}-{{ regex }}"
+      with_items: "{{ entrocim_backup_projs }}"
+      run_once: true 
+      register: files_folio        
+    
+    - name: Checking new backups exists for the itw/IO Data
+      become: true
+      become_user: entrocim
+      become_method: su
+      become_exe: 'sudo su'      
+      find:
+        paths: "{{ entrocim_backup_loc }}{{ item }}"
+        age: -1d
+        use_regex: yes
+        patterns: "{{ item }}_itwIOData_{{ regex }}"
+      with_items: "{{ entrocim_backup_projs }}"
+      run_once: true 
+      register: files_itwIOData       
+
+    - name: Failed message for backups low than two files for folio database 
+      fail: 
+        msg: "Missing folio backups for the project {{ item.item }}"
+      when: item.matched < 2 
+      run_once: true 
+      with_items: 
+        - "{{ files_folio.results }}"
+      loop_control:
+        label: "Missing folio backups for the project {{ item.item }}"
+
+    - name: Failed message for backups low than two files for itwIOData 
+      fail: 
+        msg: "Missing itwIOData backups for the project {{ item.item }}"
+      when: item.matched < 2 
+      run_once: true 
+      with_items: 
+        - "{{ files_itwIOData.results }}"
+      loop_control:
+        label: "Missing itwIOData backups for the project {{ item.item }} "
+        

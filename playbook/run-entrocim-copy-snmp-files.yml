@@ -1,0 +1,6 @@
+---
+- name: Entrocim snmp send files Playbook
+  hosts: entrocim_lim_p
+  gather_facts: no
+  roles:
+    - entrocim_snmp

@@ -1,0 +1,6 @@
+---
+- name: Metays copy db files to the D drive and after remove it 
+  hosts: metasys_sct_ctx_p,metasys_sct_dur_p
+  gather_facts: no 
+  roles:
+    - metasys_dbfiles_cleanup

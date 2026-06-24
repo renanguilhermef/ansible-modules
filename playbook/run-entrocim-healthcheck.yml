@@ -1,0 +1,13 @@
+---
+- name: Entrocim Healthecker Installation Playbook
+  hosts: all
+  gather_facts: no
+  pre_tasks:
+    - name: Checking if limit has been defined with server name that should be new active
+      fail:
+        msg: "For this playbook, you must use -l or --limit to define server or group"
+      when: ansible_limit is not defined
+      run_once: true
+
+  roles:
+    - entrocim_healthchecker

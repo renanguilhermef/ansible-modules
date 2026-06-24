@@ -1,0 +1,8 @@
+---
+# Migrate project and licenses
+- name: Run entrocim migration
+  hosts: all
+  gather_facts: no
+  roles: 
+    - entrocim_migrate
+

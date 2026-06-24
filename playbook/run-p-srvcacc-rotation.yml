@@ -1,0 +1,12 @@
+---
+  - name: Rotate password for Entrocim 
+    hosts: entrocim_all_preprod,entrocim_all_p,entrocim_all_np
+    gather_facts: no
+    roles:
+        - entrocim_srvacc_rotation
+  
+  - name: Rotate password for Cork Sauter 
+    hosts: sauter 
+    gather_facts: no 
+    roles: 
+        - sauter_srvacc_rotation 

@@ -1,0 +1,34 @@
+- name: Entrocim fix ldap SSL error
+  hosts: entrocim_all_np,entrocim_all_p,entrocim_all_preprod
+  gather_facts: no 
+  vars: 
+      entrocim_crypto_uri: "ldaps://appauth.dell.com:636"
+      entrocim_crypto_alias: "ldaps"
+  tasks: 
+  - name: Check LDAP, in case of failure , enable certificate using crypto to fix issue 
+    block:
+    - name: Checking ldap configuration on entrocim 
+      entrocim_ldap_config:
+          entrocim_hostname: "{{ inventory_hostname }}"
+          entrocim_ldap_state: "check"
+      delegate_to: localhost
+    rescue: 
+    - name: Import certificate for LDAPS using crypto on the failed ones 
+      entrocim_crypto_config:
+          entrocim_crypto_uri: "{{ entrocim_crypto_uri }}"
+          entrocim_crypto_alias: "{{ entrocim_crypto_alias }}"
+          entrocim_hostname: "{{ inventory_hostname }}"
+      delegate_to: localhost 
+
+    - name: Restarting entrocim application
+      command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+      register: restart
+      changed_when: restart.rc != 0
+      
+    - name: Checking entrocim url status
+      uri:
+        url: "https://{{ inventory_hostname }}/user/login"
+      register: url
+      until: url.status == 200
+      retries: 60
+      delay: 1

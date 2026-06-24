@@ -1,0 +1,42 @@
+---
+- name: Entrocim switchover setting switch host to a temporary inventory
+  hosts: all
+  gather_facts: no
+  connection: local
+  pre_tasks:
+    - name: Checking if switch server has been defined with server name that should be new active
+      fail:
+        msg: "For this playbook, you must set variable switch_to_server to define server that switchover will happen"
+      when: switch_to_server is not defined
+      run_once: true
+
+    - name: Adding server to a temporary inventory
+      add_host:
+        hostname: "{{ switch_to_server | trim | lower }}"
+        groups: entrocim_switchover
+
+- name: Entrocim switchover execution
+  hosts: entrocim_switchover
+  gather_facts: no
+  roles:
+    - entrocim_switchover
+  post_tasks:
+    - name: Checking if cluster hosts were defined to change them to remote
+      fail:
+        msg: "Cluster hosts weren't defined or don't exist, so remote won't happen"
+      when: out_cluster_hosts is not defined
+      run_once: true
+
+    - name: Setting cluster hosts to the temporary inventory
+      add_host:
+        hostname: "{{ item | trim }}"
+        groups: entrocim_remote
+      loop: "{{ out_cluster_hosts.stdout_lines | list | lower }}"
+
+- name: Entrocim remote execution against temporary inventory
+  hosts: entrocim_remote
+  gather_facts: no
+  roles:
+    - entrocim_remote
+
+  

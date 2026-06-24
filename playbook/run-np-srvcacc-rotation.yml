@@ -1,0 +1,6 @@
+---
+  - name: Rotate password for Tags DB 
+    hosts: tags 
+    gather_facts: no 
+    roles: 
+        - tags_srvacc_rotation

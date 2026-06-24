@@ -1,0 +1,20 @@
+- name: Entrocim changing privilege on manifest-backup.trio file 
+  hosts: entrocim_all_np,entrocim_all_preprod,entrocim_all_p
+  gather_facts: no
+  tasks:
+    - name: getting hostname 
+      shell: echo $HOSTNAME 
+      register: hostname 
+
+    - name: changing privilege on manifest-backup.trio file 
+      become: true
+      become_user: entrocim
+      become_method: su
+      become_exe: 'sudo su'
+      file:
+        dest: "{{ item }}"
+        mode: o-w
+      ignore_errors: true
+      with_items: 
+        - "/app/hepta/{{ hostname.stdout }}/var/proj/manifest-backup.trio"
+        - "/app/hepta/{{ hostname.stdout }}/var/crypto/keystore-bkup.p12"

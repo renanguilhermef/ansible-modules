@@ -1,0 +1,82 @@
+---
+- name: Run Entrocim services task
+  hosts: all
+  gather_facts: no
+  pre_tasks:
+    - name: Checking if limit has been defined with server name that should be new active
+      fail:
+        msg: "For this playbook, you must use -l or --limit to define server or group"
+      when: ansible_limit is not defined
+      run_once: true
+  tasks:
+    - name: Execute tasks for the healthchecker service 
+      block: 
+      - name: stop healthchecker
+        command: "sudo bash /app/hepta/scripts/service_hc_stop.sh"
+        tags: stop 
+
+      - name: start healthchecker
+        shell: "sudo bash /app/hepta/scripts/service_hc_start.sh"
+        tags: start 
+
+      - name: restart healthchecker
+        shell: "sudo bash /app/hepta/scripts/service_hc_restart.sh"
+        tags: restart  
+
+      - name: Checking healthcheck url status
+        uri:
+          url: "https://{{ inventory_hostname }}/healthcheck/"
+        register: url
+        until: url.status == 200
+        retries: 60
+        delay: 1
+        tags: restart,start
+      when: service=="healthchecker"
+
+    - name: Execute tasks for the entrocim service 
+      block: 
+      - name: stop entrocim
+        command: "sudo bash /app/hepta/scripts/service_entrocim_stop.sh"
+        tags: stop 
+
+      - name: start entrocim
+        shell: "sudo bash /app/hepta/scripts/service_entrocim_start.sh"
+        tags: start 
+
+      - name: restart entrocim
+        shell: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+        tags: restart  
+
+      - name: Checking entrocim url status
+        uri:
+          url: "https://{{ inventory_hostname }}/user/login"
+        register: url
+        until: url.status == 200
+        retries: 60
+        delay: 1
+        tags: restart,start
+      when: service=="entrocim"    
+
+    - name: Execute tasks for the nginx service
+      block: 
+      - name: stop nginx
+        command: "sudo bash /app/hepta/scripts/service_nginx_stop.sh"
+        tags: stop 
+
+      - name: start nginx
+        shell: "sudo bash /app/hepta/scripts/service_nginx_start.sh"
+        tags: start 
+
+      - name: restart nginx
+        shell: "sudo bash /app/hepta/scripts/service_nginx_restart.sh"
+        tags: restart 
+
+      - name: Checking entrocim url status
+        uri:
+          url: "https://{{ inventory_hostname }}/user/login"
+        register: url
+        until: url.status == 200
+        retries: 60
+        delay: 1 
+        tags: restart,start
+      when: service=="nginx"        

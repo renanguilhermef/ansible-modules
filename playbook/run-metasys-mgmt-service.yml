@@ -1,0 +1,6 @@
+---
+- name: Metasys playbook to check service, start it and notify
+  hosts: metasys_dur_p,metasys_ctx_p,metasys_ctx_np
+  gather_facts: no 
+  roles:
+    - metasys_service

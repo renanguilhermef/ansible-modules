@@ -1,0 +1,28 @@
+---
+- name: AWX Playbook delete single job hostry
+  hosts: localhost 
+  vars:
+      job_id: "{{ job_id }}"
+      awx_host: "{{ awx_host }}}"
+      awx_username: "{{ awx_username }}"
+      awx_password: "{{ awx_password }}"
+      days_of_data_to_keep: "{{ days_of_data_to_keep }}"
+  tasks: 
+    - name: set resource 
+      set_fact: 
+          awx_resource: "job_templates/{{ job_id }}/jobs"
+          date: "{{ '%Y-%m-%dT%H:%M:%S%z' | strftime( ( ansible_date_time.epoch | int ) + ( 86400 * days_of_data_to_keep )  ) }}"
+          
+    - name: get job history according with job id 
+      set_fact:
+          awx_job_history: "{{ lookup('awx.awx.controller_api', awx_resource , host= awx_host , username= awx_username , password= awx_password , verify_ssl=False, return_all=true, query_params={ 'finished__lte': date }) }}"
+    
+    - name: REST API CALL / DELETE
+      uri:
+          url: "https://{{ awx_host }}//api/v2/jobs/{{ item['id'] }}/"
+          method: DELETE
+          user: "{{ awx_username }}"
+          password: "{{ awx_password }}"
+          force_basic_auth: true
+          status_code: 204
+      with_items: "{{ awx_job_history }}"
