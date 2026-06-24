@@ -1,0 +1,15 @@
+---
+entrocim_smtp_from: "entrocim@dell.com"
+entrocim_smtp_uri: "smtp://smtp-outbound.dell.com:25"
+entrocim_crypto_uri: "ldaps://appauth.dell.com:636"
+entrocim_crypto_alias: "ldaps"
+entrocim_sysmod_name : 
+  - ldap
+entrocim_ldap_host: "appauth.dell.com"
+entrocim_ldap_port: "636"
+entrocim_ldap_userAttrs: "mail, displayName"
+entrocim_ldap_userBaseDN: "DC=dell,DC=com" 
+entrocim_ldap_userProtoAttr: "memberOf"
+entrocim_ldap_serviceAccountDN: "CN=svc_prdheptaldap,OU=Service Accounts,DC=amer,DC=dell,DC=com"
+entrocim_ldap_userProtoPriority: "AD_EMS_FACITPAC_RW,AUSHRPRODUCTION"
+entrocim_ldap_loginAttr: "sAMAccountName"

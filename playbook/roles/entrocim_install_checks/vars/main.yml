@@ -1,0 +1,9 @@
+---
+entrocim_home: "/app/hepta/"
+entrocim_java: "/app/hepta/java"
+entrocim_backup: "/app/hepta/backup/db"
+entrocim_ssl: "/app/hepta/ssl"
+entrocim_scripts: "/app/hepta/scripts"
+services:
+  - "nginx"
+  - "entrocim"

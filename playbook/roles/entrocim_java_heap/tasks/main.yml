@@ -1,0 +1,40 @@
+- name: Getting hostname information from server
+  shell: echo $HOSTNAME
+  register: hostname
+  changed_when: hostname.rc != 0
+
+- name: getting java heap to set 
+  shell : |
+          set -o pipefail
+          hostmem=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=4; {}/1024^2" | bc)
+          roundfix=$(echo $hostmem | awk '{ print $1 + .5 }')
+          setheap=$(($(printf "%.0f\n" "$roundfix")/2))
+          echo $setheap 
+  register: out_java_heap 
+  changed_when: out_java_heap.rc != 0
+  args:
+    executable: /usr/bin/bash
+
+- name: setting variables with hostname and java heap size 
+  set_fact:
+    hostname: "{{ hostname.stdout }}"
+    java_heap: "{{ out_java_heap.stdout }}"
+
+- name: copy service template with updated java heap to the entrocim instance on scripts folder 
+  template:
+    src: "{{ service_config_template }}entrocim.service.j2"
+    dest: "{{ scripts_dir }}entrocim.service"
+    mode: "0731"
+
+- name: copy file using root privilege to the system service folder, and reload service 
+  shell: | 
+         set -o pipefail
+         echo "mv {{ scripts_dir }}entrocim.service {{ service_dir }}
+         systemctl daemon-reload
+         service entrocim restart" > /app/hepta/scripts/move-entrocim-service.sh
+         sudo bash /app/hepta/scripts/move-entrocim-service.sh
+         rm -rf /app/hepta/scripts/move-entrocim-service.sh
+  register: out_copy 
+  changed_when: out_copy.rc != 0
+  args:
+    executable: /usr/bin/bash        

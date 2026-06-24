@@ -1,0 +1,3 @@
+java_file: "jdk-19_linux-x64_bin.tar.gz"
+java_path_source: "{{ role_path }}files/"
+java_path_dest: "/app/hepta/java/"

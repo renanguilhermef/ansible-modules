@@ -1,0 +1,13 @@
+- name: apply license on the entrocim host 
+  entrocim_license:
+    entrocim_hostname: "{{ inventory_hostname }}"
+    entrocim_license: "{{ lookup('file', item) }}"
+  with_fileglob:
+    - "{{ entrocim_source_lic }}*.props"
+  delegate_to: localhost
+
+- name: restart entrocim application
+  command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+  register: restart
+  changed_when: restart.rc != 0
+      

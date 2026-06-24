@@ -1,0 +1,118 @@
+---
+- name: Checking if limit has been defined with server name that should be new active
+  fail:
+    msg: "For this playbook, you must use -l or --limit to define server or group"
+  when: ansible_limit is not defined
+  run_once: true
+
+- name: checking if variables has been set 
+  fail:
+    msg: "One of the variables hasn't been set. Please check"
+  when: item is not defined 
+  with_items: 
+    - "{{ project }}"
+    - "{{ source_instance }}"
+
+- name: getting hostname from the target instance
+  shell: echo $HOSTNAME 
+  register: host_target
+  changed_when: host_target.rc != 0
+
+- name: getting hostname from the source instance 
+  shell: echo $HOSTNAME 
+  register: host_source 
+  delegate_to: "{{ source_instance }}"
+  changed_when: host_source.rc != 0
+  
+- name: setting location for project and licenses 
+  set_fact:
+    source_entrocim_lic_loc: "/app/hepta/{{ host_source.stdout }}/var/lic/"
+    source_entrocim_project_loc: "/app/hepta/{{ host_source.stdout }}/var/proj/{{ project }}"
+    target_entrocim_lic_loc: "/app/hepta/{{ host_target.stdout }}/var/lic/"
+    target_entrocim_project_loc: "/app/hepta/{{ host_target.stdout }}/var/proj/"
+
+- name: create a folder on the NAS to set source information 
+  become: true
+  become_user: entrocim
+  become_method: su
+  become_exe: 'sudo su'
+  file: 
+    path: "{{ nas_dir }}/data_to_migrate_{{ project }}/"
+    state: directory
+    mode: "0777"
+  register: migration_path 
+
+- name: create a proj folder on the target host
+  become: true
+  become_user: entrocim
+  become_method: su
+  become_exe: 'sudo su'
+  file: 
+    path: "{{ target_entrocim_project_loc }}"
+    state: directory
+  register: proj_folder  
+
+- name: copying files to the nas
+  shell: |
+          set -o pipefail
+          echo "cp -R  {{ item }} {{ migration_path.path }}" >> /app/hepta/scripts/copy_migrate_files.sh
+          sudo bash /app/hepta/scripts/copy_migrate_files.sh
+          rm -rf /app/hepta/scripts/copy_migrate_files.sh
+  register: copy_files
+  changed_when: copy_files.rc != 0
+  args:
+    executable: /usr/bin/bash
+  with_items: 
+    - "{{ source_entrocim_lic_loc }}"
+    - "{{ source_entrocim_project_loc }}"
+  delegate_to: "{{ source_instance }}"
+
+- name: copy lic files from NAS to target instance 
+  shell: |
+          set -o pipefail
+          echo "cp -R  {{ migration_path.path }}/lic/* {{ target_entrocim_lic_loc }}" >> /app/hepta/scripts/copy_lic_files.sh
+          sudo bash /app/hepta/scripts/copy_lic_files.sh
+          rm -rf /app/hepta/scripts/copy_lic_files.sh
+          echo "chown -R entrocim:entrocim {{ target_entrocim_lic_loc }}/*" >> /app/hepta/scripts/chown_lic_files.sh
+          sudo bash /app/hepta/scripts/chown_lic_files.sh
+          rm -rf /app/hepta/scripts/chown_lic_files.sh
+  register: copy_lics
+  changed_when: copy_lics.rc != 0
+  args:
+    executable: /usr/bin/bash
+
+- name: copy project files from NAS to target instance 
+  shell: |
+          set -o pipefail
+          echo "cp -R  {{ migration_path.path }}/{{ project }}/ {{ target_entrocim_project_loc }}" >> /app/hepta/scripts/copy_proj_files.sh
+          sudo bash /app/hepta/scripts/copy_proj_files.sh
+          rm -rf /app/hepta/scripts/copy_proj_files.sh
+          echo "chown -R entrocim:entrocim {{ target_entrocim_project_loc }}/*" >> /app/hepta/scripts/chown_proj_files.sh
+          sudo bash /app/hepta/scripts/chown_proj_files.sh
+          rm -rf /app/hepta/scripts/chown_proj_files.sh
+  register: copy_lics
+  changed_when: copy_lics.rc != 0
+  args:
+    executable: /usr/bin/bash
+
+- name: remove temporary folder on the NAS to set source information 
+  shell: | 
+         echo "rm -rf {{ migration_path.path }}" >> /app/hepta/scripts/rm-temp-folder.sh
+         sudo bash /app/hepta/scripts/rm-temp-folder.sh
+         rm -rf /app/hepta/scripts/rm-temp-folder.sh
+  register: remove 
+  changed_when: remove.rc != 0
+
+- name: restart entrocim
+  command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+  register: restart
+  changed_when: restart.rc != 0
+
+- name: Checking entrocim url status
+  uri:
+    url: "https://{{ host_target.stdout }}/user/login"
+  register: url
+  until: url.status == 200
+  retries: 60
+  delay: 1
+  

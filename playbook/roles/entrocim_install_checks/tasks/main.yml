@@ -1,0 +1,52 @@
+---
+  - name: Checking if limit has been defined with servers to install entrocim
+    fail:
+      msg: "For this playbook, you must use -l or --limit to define servers that EntroCIM will install"
+    when: ansible_limit is not defined
+    run_once: true
+
+  - name: Validate if entrocim is running on the instance. In case of running, will fail installation because it was already installed
+    block:
+     - name: Checking services status
+       command: "service {{ item }} status"
+       with_items: "{{ services }}"
+       failed_when:  out_service.stdout is search("running")
+       changed_when: out_service.rc!=0
+       register: out_service
+      #  tags:
+      #    - skip_ansible_lint
+    rescue:
+     - name: output message error
+       fail:
+         msg: "EntroCIM or/and nginx services are running. Please stop services before to execute installation on the host {{ inventory_hostname }}"
+
+  - name: Validate if nginx has been instaled on the new EntroCIM instance
+    block:
+     - name: checking nginx installation
+       command: "rpm -qa nginx"
+       failed_when: out_nginx.stdout | length == 0
+       register: out_nginx
+      #  tags:
+      #    - skip_ansible_lint
+    rescue:
+     - name: output message error
+       fail:
+         msg: "nginx was not installed on {{ inventory_hostname }}. Please get in contact with Core system engineer to install it. "
+
+  - name: Validate if EntroCIM main folders exists
+    block:
+     - name: Checking all EntroCIM main folders exists
+       stat:
+          path: "{{ item }}"
+       failed_when: not out_folder.stat.exists
+       with_items:
+         - "{{ entrocim_home }}"
+         - "{{ entrocim_java }}"
+         - "{{ entrocim_ssl }}"
+         - "{{ entrocim_scripts }}"
+         #- "{{ entrocim_backup }}"
+       register: out_folder
+    rescue:
+      - name: output message error
+        fail:
+          msg: "Core script has not been executed. Please get in contact with Core system engineer to execute it."

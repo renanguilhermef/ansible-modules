@@ -1,0 +1,17 @@
+# License file for entroCIM / Dell
+
+authority  = stackhub
+licVersion = 1.0
+id         = 2c8cbd14-4b0bd0ae
+rev        = 0
+mod        = 2023-09-07T16:55:45.89Z UTC
+generated  = 2023-09-07T16:56:02.608Z UTC
+org        = f7af4e3f-4d02-46af-b41d-a35efd8b43f0 EntroCIM
+vendor     = f7af4e3f-4d02-46af-b41d-a35efd8b43f0 EntroCIM
+product    = 2a212106-07059d6f entroCIM
+licensee   = Dell
+packages   = itwEntrocimExt 1.0
+expires    = 2024-08-31
+skyarcLic  = 2c8cbba5-3b4c9447
+sig        = TEXL7CPvqVEFhsA7hNzAe0c_W41Yty6ZDooWkdJ0uw_ZHPq1RBhCBlSWPknuiUN_BIOs5zjCcz1q2sWv8z9f4w
+

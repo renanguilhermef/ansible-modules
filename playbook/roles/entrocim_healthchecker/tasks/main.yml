@@ -1,0 +1,24 @@
+---
+  - name: Sending healthchecker scripts and binaries to the target host
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      mode: "0775"
+    with_items:
+      - {  src: "{{ entrocim_hc_script }}", dest: "{{ entrocim_scripts }}" }
+      - {  src: "{{ entrocim_hc_binaries }}", dest: "{{ entrocim_home }}"  }
+
+  - name: Execute Healthchecker installation
+    command: "sudo bash {{ entrocim_scripts }}/HealthcheckerInstall.sh"
+    environment:
+      TERM: "linux"
+    register: out_install
+    changed_when: out_install.rc != 0
+
+  - name: Checking healthcheck url status
+    uri:
+      url: "https://{{ inventory_hostname }}/healthcheck/"
+    register: url
+    until: url.status == 200
+    retries: 60
+    delay: 1

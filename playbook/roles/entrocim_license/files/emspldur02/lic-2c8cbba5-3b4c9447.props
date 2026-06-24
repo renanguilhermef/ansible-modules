@@ -1,0 +1,16 @@
+version=3.0
+id=2c8cbba5-3b4c9447
+licensee=Dell
+product=1faf38c6-4595b720 SkySpark
+vendor=1306de1e-6b1fa603 SkyFoundry
+org=1e350c52-189a75a5 entroCIM, LLC
+authority=skyfoundry
+points=10000
+features=core,conn,analytics
+weather=skyfoundry
+maintDue=2024-08-01
+devOnly=false
+saas=false
+mod=2023-09-07T16:51:15.93Z UTC
+generated=2023-09-07T16:51:26.569Z UTC
+sig=eZ3uHPmN8ZtAGV-797dw4xzX7Q5oZ6BoVUMsRqtlML28P-Qnw5HUklrj6MCupR_Nrh4y16vLNiHLn3cxvJuCGA

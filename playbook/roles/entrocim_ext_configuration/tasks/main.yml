@@ -1,0 +1,16 @@
+---
+- name: get local projects 
+  entrocim_project:
+    entrocim_hostname: "{{ inventory_hostname }}"
+    entrocim_project_type: "local"
+  delegate_to: localhost 
+  register: projs 
+
+- name: Enable extension configuration
+  entrocim_ext_config:
+    entrocim_ext_name: "{{ entrocim_ext_name }}"
+    entrocim_hostname: "{{ inventory_hostname }}"
+    entrocim_ext_project: "{{ item }}"
+    entrocim_ext_state: "{{ entrocim_ext_state }}"
+  with_items: "{{ projs.list }}"
+  delegate_to: localhost 

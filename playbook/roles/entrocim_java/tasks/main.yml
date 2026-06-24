@@ -1,0 +1,71 @@
+- name: stop entrocim
+  command: "sudo bash /app/hepta/scripts/service_entrocim_stop.sh"
+  register: stop
+  changed_when: stop.rc != 0
+
+- name: cleanup files on java folder
+  shell: |
+          set -o pipefail
+          echo "rm -rf {{ java_path_dest }}/*" >> /app/hepta/scripts/remove_java_files.sh
+          sudo bash /app/hepta/scripts/remove_java_files.sh
+          rm -rf /app/hepta/scripts/remove_java_files.sh
+  register: cleanup
+  changed_when: cleanup.rc != 0
+  args:
+    executable: /usr/bin/bash
+
+- name: copy last java file version
+  become: true
+  become_user: entrocim
+  become_method: su
+  become_exe: 'sudo su'
+  copy:
+    src: "{{ java_file }}"
+    dest: "{{ java_path_dest }}"
+
+- name: unarchive last file java version
+  become: true
+  become_user: entrocim
+  become_method: su
+  become_exe: 'sudo su'
+  unarchive:
+    src: "{{ java_path_dest }}{{ java_file }}"
+    dest: "{{ java_path_dest }}"
+    remote_src: yes
+
+- name: changing owner and group to entrocim
+  shell: |
+          set -o pipefail
+          echo "chown -R entrocim:entrocim {{ java_path_dest }}/*" >> /app/hepta/scripts/ownership_java.sh
+          sudo bash /app/hepta/scripts/ownership_java.sh
+          rm -rf /app/hepta/scripts/ownership_java.sh
+  register: change_owner
+  changed_when: change_owner.rc != 0
+  args:
+    executable: /usr/bin/bash
+
+- name: create symbol link to java bin
+  shell: |
+          set -o pipefail
+          echo "ln -s -f {{ java_path_dest }}/jdk*/bin/java /usr/bin/java" >> /app/hepta/scripts/symbol.sh
+          sudo bash /app/hepta/scripts/symbol.sh
+          rm -rf /app/hepta/scripts/symbol.sh
+  register: simbol_link
+  changed_when: simbol_link.rc != 0
+  args:
+    executable: /usr/bin/bash
+
+- name: start entrocim application
+  command: "sudo bash /app/hepta/scripts/service_entrocim_start.sh"
+  register: start
+  changed_when: start.rc != 0
+
+- name: Checking entrocim url status
+  uri:
+    url: "https://{{ inventory_hostname }}/user/login"
+  register: url
+  until: url.status == 200
+  retries: 60
+  delay: 1
+
+

@@ -1,0 +1,72 @@
+---
+  - name: Checking source certificate folder and files exist.
+    block:
+      - name: Validating source certificate folder
+        stat:
+          path: "{{ entrocim_source_certs }}"
+        register: out_source_path
+        failed_when: not out_source_path.stat.exists
+        delegate_to: localhost
+
+      - name: Getting files under certificate folder
+        find:
+          paths: "{{ entrocim_source_certs }}"
+          patterns: '*.txt,*.pfx,*.pem'
+        register: out_source_certs
+        failed_when: out_source_certs.matched != 3
+        delegate_to: localhost
+
+    rescue:
+      - name: Message to the user that folder with certificate doesn't exist
+        fail:
+            msg:
+              - "{{ entrocim_source_certs }} folder not found, please create a folder with {{ inventory_hostname_short | lower }} along with certificate files"
+              - "Only .pfx, .pem and .txt with private key are required"
+
+  - name: Sending certificate files to the EntroCIM ssl folder
+    copy:
+      src: "{{ item.path }}"
+      dest: "{{ entrocim_ssl }}"
+      mode: "0710"
+    with_items: "{{ out_source_certs.files }}"
+
+  - name: Getting certificate files on the EntroCIM ssl folder
+    find:
+      paths: "{{ entrocim_ssl }}"
+    register: out_certs
+
+  - name: Setting private key text file location to the ansible variable
+    set_fact:
+      private_key_txt: "{{ item.path }}"
+    when: item.path is search("txt")
+    with_items: "{{ out_certs.files }}"
+
+  - name: Setting .pfx file location to the ansible variable
+    set_fact:
+      pfx_cert_file: "{{ item.path }}"
+    when: item.path is search("pfx")
+    with_items: "{{ out_certs.files }}"
+
+  - name: Setting .pem file location to the ansible variable
+    set_fact:
+      pem_cert_file: "{{ item.path }}"
+    when: item.path is search("pem")
+    with_items: "{{ out_certs.files }}"
+
+  - name: Getting private key value
+    command: "cat {{ private_key_txt }}"
+    register: private_key
+    changed_when: private_key.rc != 0
+
+  - name: Creating private key from .pfx file and private key value
+    shell: |
+           openssl pkcs12 -in {{ pfx_cert_file }} -nocerts -out {{ entrocim_ssl }}/private.key -passin pass:{{ private_key.stdout }} -passout pass:{{ private_key.stdout }}
+           openssl rsa -in {{ entrocim_ssl }}/private.key -out {{ entrocim_ssl }}/$HOSTNAME.key -passin pass:{{ private_key.stdout }}
+    register: create
+    changed_when: create.rc != 0
+
+  - name: Renaming .pem file
+    shell: mv {{ pem_cert_file }} {{ entrocim_ssl }}/$HOSTNAME.pem
+    register: rename
+    changed_when: rename.rc != 0
+    ignore_errors: true

@@ -1,0 +1,5 @@
+---
+entrocim_hc_binaries: "{{ role_path }}/files/entrocim_healthchecker"
+entrocim_hc_script: "{{ role_path }}/files/HealthcheckerInstall.sh"
+entrocim_scripts: "/app/hepta/scripts/"
+entrocim_home: "/app/hepta/"

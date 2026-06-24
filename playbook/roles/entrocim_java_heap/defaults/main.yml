@@ -1,0 +1,5 @@
+scripts_dir: /app/hepta/scripts/
+service_config_template: "{{ role_path }}/templates/"
+service_dir: /etc/systemd/system/
+java_heap:
+hostname:

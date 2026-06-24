@@ -1,0 +1,16 @@
+[Unit]
+Description=EntroCIM
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=entrocim
+WorkingDirectory=/app/hepta/{{ hostname }}
+ExecStart=/bin/java -Xmx{{ java_heap }}G -cp /app/hepta/{{ hostname }}/lib/java/sys.jar -Dfan.home=/app/hepta/{{ hostname }} fanx.tools.Fan skyarcd
+ExecReload=/bin/kill -1 -- $MAINPID
+ExecStop=/bin/kill -- $MAINPID
+TimeoutStopSec=5
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+# License file for EntroCIM / Dell
+
+authority  = stackhub
+licVersion = 1.0
+id         = 2a7c22dc-118d1b22
+rev        = 1
+mod        = 2023-07-20T19:03:34.687Z UTC
+generated  = 2023-07-20T19:05:50.988Z UTC
+org        = f7af4e3f-4d02-46af-b41d-a35efd8b43f0 IoTWarez
+vendor     = f7af4e3f-4d02-46af-b41d-a35efd8b43f0 IoTWarez
+product    = 2481a83d-f11c886a EntroCIM
+licensee   = Dell
+packages   = itwDashboardExt 0+
+expires    = 2024-08-31
+skyarcLic  = 2a7ae4e3-a8669f56
+sig        = MaXuq05WiF6wvp0SG7p74mFnlvtSrRESiuZ1jSCyLK7ydU-K4qlQZVn0zmep6dwflChSB1bZLc672xBLfAzidg
+

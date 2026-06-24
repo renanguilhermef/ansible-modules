@@ -1,0 +1,78 @@
+---
+  - name: Import certificate for LDAPS using crypto
+    entrocim_crypto_config:
+      entrocim_crypto_uri: "{{ entrocim_crypto_uri }}"
+      entrocim_crypto_alias: "{{ entrocim_crypto_alias }}"
+      entrocim_hostname: "{{ inventory_hostname }}"
+    delegate_to: localhost 
+
+  - name: Restarting entrocim application after crypto configuration
+    command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+    register: restart
+    changed_when: restart.rc != 0
+
+  - name: Checking entrocim url status
+    uri:
+      url: "https://{{ inventory_hostname }}/user/login"
+    register: url
+    until: url.status == 200
+    retries: 60
+    delay: 1
+
+  - name: Enable sysmod configuration
+    entrocim_sysmod_config:
+      entrocim_sysmod_name: "{{ item }}"
+      entrocim_hostname: "{{ inventory_hostname }}"
+      entrocim_sysmod_state: "add"
+    with_items: "{{ entrocim_sysmod_name }}"
+    delegate_to: localhost 
+
+  - name: Include myvault variables
+    include_vars:
+      file: myvault.yml
+    no_log: true 
+    run_once: true
+
+  - name: getting LDAP account password from myvault
+    myvault_get_password:
+        vault_hid: "{{ vault_hid }}"
+        vault_authn: "{{ vault_authn }}"
+        vault_secret: "{{ vault_secret }}"
+    register: out_password
+    delegate_to: "localhost" 
+    no_log: true
+    run_once: true 
+
+  - name: Setting LDAP configuration
+    entrocim_ldap_config:
+        entrocim_ldap_host: "{{ entrocim_ldap_host }}"
+        entrocim_ldap_port: "{{ entrocim_ldap_port }}"
+        entrocim_ldap_userAttrs: "{{ entrocim_ldap_userAttrs }}"
+        entrocim_ldap_userBaseDN: "{{ entrocim_ldap_userBaseDN }}"
+        entrocim_ldap_password: "{{ out_password.stdout }}"
+        entrocim_ldap_userProtoAttr: "{{ entrocim_ldap_userProtoAttr }}"
+        entrocim_ldap_serviceAccountDN: "{{ entrocim_ldap_serviceAccountDN }}"
+        entrocim_ldap_userProtoPriority: "{{ entrocim_ldap_userProtoPriority }}"
+        entrocim_ldap_loginAttr: "{{ entrocim_ldap_loginAttr }}"
+        entrocim_hostname: "{{ inventory_hostname }}"
+        entrocim_ldap_state: "add"
+    delegate_to: localhost
+    register: out_update_password
+    no_log: true
+
+  - name: update protos on the ldap configuration 
+    entrocim_ldap_config:
+      entrocim_hostname: "{{ inventory_hostname }}"
+      entrocim_ldap_state: "updateProto"
+    delegate_to: localhost
+    
+  - name: Configuring entrocim email
+    entrocim_smtp_config:
+      entrocim_hostname: "{{ inventory_hostname }}"
+      entrocim_smtp_uri: "{{ entrocim_smtp_uri }}"
+      entrocim_smtp_from: "{{ entrocim_smtp_from }}"
+    delegate_to: localhost
+
+
+
+
