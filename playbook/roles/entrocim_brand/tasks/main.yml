@@ -1,0 +1,31 @@
+- name: getting hostname from the target instance
+  shell: echo $HOSTNAME 
+  register: hostname
+  changed_when: hostname.rc != 0
+
+- name: Getting entrocim brand location
+  set_fact:
+    entrocim_brand_loc: "/app/hepta/{{ hostname.stdout }}/var/brand/"
+
+- name: copy brand to the entrocim location
+  become: true
+  become_user: entrocim
+  become_method: su
+  become_exe: 'sudo su'
+  copy:
+    src: "{{ brand_file_loc }}"
+    dest: "{{ entrocim_brand_loc }}"
+
+- name: Restarting entrocim application
+  command: "sudo bash /app/hepta/scripts/service_entrocim_restart.sh"
+  register: restart
+  changed_when: restart.rc != 0
+
+- name: Checking entrocim url status
+  uri:
+    url: "https://{{ inventory_hostname }}/user/login"
+  register: url
+  until: url.status == 200
+  retries: 60
+  delay: 1
+  

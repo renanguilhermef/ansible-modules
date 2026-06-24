@@ -1,0 +1,83 @@
+- name: get local projects 
+  entrocim_project:
+    entrocim_hostname: "{{ inventory_hostname }}"
+    entrocim_project_type: "local"
+  delegate_to: localhost 
+  register: projs 
+
+- name: getting hostname from the target instance
+  shell: echo $HOSTNAME 
+  register: hostname
+  changed_when: hostname.rc != 0
+    
+- name: create project directory 
+  file:
+    path: "/app/hepta/backup/db/{{ item }}"
+    state: directory 
+    mode: 0777
+  with_items:
+    - "{{ projs.list }}"
+
+- name: find new backups to send to the NAS
+  become: true
+  become_user: entrocim
+  become_method: su
+  become_exe: 'sudo su'
+  find:
+    paths: /app/hepta/{{ hostname.stdout }}/var/proj/{{ item[0] }}/{{ item[1] }}/
+    age: -1d
+    recurse: yes
+  with_nested: 
+    - "{{ projs.list }}"
+    - "{{ source_bkp_folder }}"
+  register: files_to_send
+
+- name: initialize variable
+  set_fact:
+    bkps: []
+    delete_files: []
+
+- name: getting backup files
+  set_fact:
+    bkps: "{{ bkps + item.files }}"
+  when: item.matched > 0
+  with_items:
+      - "{{ files_to_send.results }}"
+
+- name: copy backup files to the nas
+  become: true
+  become_user: entrocim
+  become_method: su
+  become_exe: 'sudo su'
+  copy:
+    src: "{{ item[1].path }}"
+    dest: "/app/hepta/backup/db/{{ item[0] }}/"
+    owner: entrocim
+    group: entrocim
+    mode: "0777"
+    remote_src: yes
+  when: item[0] == item[1].path.split('/')[6]
+  with_nested: 
+   - "{{ projs.list }}"
+   - "{{ bkps }}"
+
+- name: find all backups older than 10 days
+  find:
+    paths: /app/hepta/backup/db/{{ item }}/
+    age: 10d
+    recurse: yes
+  with_items: "{{ projs.list }}"
+  register: files_to_delete
+
+- name: set backup files to be deleted 
+  set_fact:
+    delete_files: "{{ delete_files + item.files }}"
+  when: item.matched > 0
+  with_items:
+      - "{{ files_to_delete.results }}"
+
+- name: remove older than 10 days
+  file:
+    path: "{{ item.path }}" 
+    state: absent
+  with_items: "{{ delete_files }}"

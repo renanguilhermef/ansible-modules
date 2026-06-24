@@ -1,0 +1,1 @@
+brand_file_loc: "{{ role_path }}/files/brand.zip"
